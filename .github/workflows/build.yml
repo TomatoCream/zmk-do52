@@ -59,7 +59,7 @@ jobs:
           if [ -n "${{ matrix.snippet }}" ]; then
             SNIPPET_ARG="-S ${{ matrix.snippet }}"
           fi
-          west build -s zmk/app -b ${{ matrix.board }} $SNIPPET_ARG -- -DSHIELD=${{ matrix.shield }} -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
+          west build -s zmk/app -b ${{ matrix.board }} $SNIPPET_ARG -- -DSHIELD=${{ matrix.shield }} -DZMK_CONFIG="${GITHUB_WORKSPACE}/config" -DBOARD_ROOT="${GITHUB_WORKSPACE}"
 
       - name: ${{ matrix.shield }} Kconfig file
         run: grep -v -e "^#" -e "^$" build/zephyr/.config | sort
