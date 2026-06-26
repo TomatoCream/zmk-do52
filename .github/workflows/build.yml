@@ -12,17 +12,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # NOTE: the pinned ZMK fork (infused-kim mouse PR, Zephyr 3.5.0) has
+          # no `zmk-usb-logging` snippet, so we don't request it here.
           - board: nice_nano_v2
             shield: do52_left
-            snippet: zmk-usb-logging
           - board: nice_nano_v2
             shield: do52_right
           - board: nice_nano_v2
             shield: do52pro_left
-            snippet: zmk-usb-logging
           - board: nice_nano_v2
             shield: do52pro_right
-            snippet: zmk-usb-logging
     steps:
       - name: Checkout
         uses: actions/checkout@v4
