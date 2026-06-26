@@ -1,6 +1,13 @@
 #include <dt-bindings/zmk/matrix_transform.h>
 
 / {
+    // The PS/2 trackpoint driver uses an older ZMK fork that locates the
+    // matrix via `chosen`, not the newer `zmk,physical-layout` node below.
+    chosen {
+        zmk,kscan = &kscan0;
+        zmk,matrix-transform = &default_transform;
+    };
+
     default_layout: default_layout {
         compatible = "zmk,physical-layout";
         display-name = "Default Layout";

@@ -14,3 +14,7 @@
         , <&pro_micro 1 GPIO_ACTIVE_HIGH>
         ;
 };
+
+// PS/2 trackpoint / mouse (right half is the BLE central). See the file header
+// for pin choices. Remove this include to build without the trackpoint.
+#include "do52_ps2_mouse.dtsi"
