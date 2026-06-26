@@ -2,6 +2,10 @@
 
 ZMK firmware for the **do52 / do52pro** split keyboard.
 
+> **Maintenance rule:** keep this file in sync with reality. Whenever you change
+> a config path, a build/flash step, the west manifest, the trackpoint wiring,
+> or the split roles, update the relevant section here in the same change.
+
 ## Current / canonical target
 
 > **Edit the do52 config for current work.** The active hardware is the
@@ -29,6 +33,10 @@ runs the trackpoint); the **LEFT half is the peripheral**. This is set in
 `do52pro` equivalents live in `config/do52pro.*` and
 `boards/shields/do52pro/`.
 
+The committed firmware is tiny (~170K, ~38 files): just `config/`, `boards/`,
+`scripts/`, `build.yaml`, and the workflow. Everything heavy is fetched by west
+(see below) and gitignored.
+
 ## Trackpoint notes
 
 - Driver: [infused-kim/kb_zmk_ps2_mouse_trackpoint_driver](https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver),
@@ -47,25 +55,47 @@ runs the trackpoint); the **LEFT half is the peripheral**. This is set in
   reset. Change these in `do52_ps2_mouse.dtsi` if the trackpoint is wired
   differently.
 
+## Toolchain & workspace layout
+
+One script drives everything: **`scripts/zmk.py`** (`setup` / `update` /
+`build` / `flash`). It's stdlib-only and uses **`uv`** to manage the Python env
+and `west`.
+
+Toolchain comes from one of two places, auto-detected by `zmk.py`:
+
+- **Nix:** `nix develop` (see `flake.nix`) provides `cmake ninja dtc
+  gcc-arm-embedded uv python3`. If `arm-none-eabi-gcc` is on `PATH`, `zmk.py`
+  derives `GNUARMEMB_TOOLCHAIN_PATH` from it.
+- **macOS/Homebrew:** `zmk.py setup` installs the brew deps + the
+  `gcc-arm-embedded` cask. Fallback toolchain path if not on `PATH`:
+  `/Applications/ArmGNUToolchain/15.2.rel1/arm-none-eabi`.
+
+The west workspace is **THIS repo**. `.west/config` points its manifest at
+`./config`, and `west update` clones the deps *into the repo root*: `zmk/`
+(~45M), `zephyr/` (~600M), `modules/` (~3GB). The uv venv lives at `./.venv`.
+All are gitignored, along with `kb_zmk_ps2_mouse_trackpoint_driver/` (the driver
+clone — west manages it, never commit it).
+
 ## Build & flash (local)
 
-Prereqs (one-time): `./scripts/setup.sh` creates the west workspace +
-`~/zmk-workspace/.venv` and expects the ARM toolchain at
-`/Applications/ArmGNUToolchain/15.2.rel1/arm-none-eabi`.
-
 ```bash
-# After ANY change to config/west.yml, refresh the workspace once:
-source ~/zmk-workspace/.venv/bin/activate && west update
+# One-time (brew on macOS, or run inside `nix develop` first):
+./scripts/zmk.py setup
+
+# After ANY change to config/west.yml, refresh the checkout once so zmk/ and
+# the modules switch to the manifest's revisions:
+./scripts/zmk.py update
 
 # Build -> ./firmware/do52_<side>.uf2
-./scripts/build.sh both      # or: left | right
+./scripts/zmk.py build both      # or: left | right
 
 # Flash a half (double-tap RESET on that nice!nano when prompted)
-./scripts/flash.sh both      # or: left | right
+./scripts/zmk.py flash both      # or: left | right
 ```
 
-Both scripts default to `KEYBOARD=do52` / `BOARD=nice_nano_v2`. To build the
-older variant: `KEYBOARD=do52pro ./scripts/build.sh both`.
+Defaults are `--keyboard do52` / `--board nice_nano_v2` (env `KEYBOARD`/`BOARD`
+also honored). To build the older variant:
+`./scripts/zmk.py build both --keyboard do52pro`.
 
 After flashing, if the halves or the host won't connect (the central side
 changed), clear BLE bonds on both halves (a `&bt BT_CLR` keybind or a

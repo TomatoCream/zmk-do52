@@ -1,0 +1,91 @@
+#+TITLE: do52 / do52pro — ZMK firmware
+#+OPTIONS: toc:2 num:nil
+
+ZMK firmware for the *do52 / do52pro* split keyboard, based on
+[[https://github.com/brokenax3/zmk-do42][brokenax3/zmk-do42]].
+
+* Status
+
+| Feature                         | State                                   |
+|---------------------------------+-----------------------------------------|
+| do52 / do52pro layouts (5-way)  | working                                 |
+| BLE split                       | working                                 |
+| PS/2 trackpoint (do52, right)   | working — see [[*Trackpoint][Trackpoint]] |
+| Wired split                     | not supported                           |
+
+* Canonical target
+
+The active hardware is the *do52 on nice!nano v2 (nRF52840)* with a *PS/2
+trackpoint on the RIGHT half*. The =do52pro= shield (RP2040) and =do42= are
+older variants kept for reference.
+
+Split roles: the *RIGHT half is the BLE central* (connects to the host and
+drives the trackpoint); the *LEFT half is the peripheral*. Set in
+=boards/shields/do52/Kconfig.defconfig=.
+
+* Where things live
+
+| What you change                       | File(s)                                                       |
+|---------------------------------------+---------------------------------------------------------------|
+| Keymap / layers / behaviors           | =config/do52.keymap=                                          |
+| Per-build Kconfig options             | =config/do52.conf=                                            |
+| west manifest (ZMK + driver modules)  | =config/west.yml=                                             |
+| Key matrix + physical layout          | =boards/shields/do52/do52.dtsi=                               |
+| Per-half column pins                  | =boards/shields/do52/do52_{left,right}.overlay=              |
+| Trackpoint (PS/2) pins & settings     | =boards/shields/do52/do52_ps2_mouse.dtsi=                     |
+| Split role / keyboard name            | =boards/shields/do52/Kconfig.defconfig=                       |
+| Build matrix (local + CI)             | =build.yaml=, =.github/workflows/build.yml=                   |
+
+=do52pro= equivalents live in =config/do52pro.*= and =boards/shields/do52pro/=.
+
+* Trackpoint
+
+- Driver: [[https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver][infused-kim/kb_zmk_ps2_mouse_trackpoint_driver]], pulled in via
+  =config/west.yml=.
+- It needs ZMK's mouse PR, so =config/west.yml= points =zmk= at the fork
+  =infused-kim @ pr-testing/mouse_ps2_module_base= instead of
+  =zmkfirmware/main=. Stock ZMK main has no mouse support and won't build with
+  the driver.
+- The driver only runs on the BLE *central*, which is why the trackpoint half
+  must be the central (currently RIGHT).
+- Pins on the right controller (nice!nano "pro_micro" numbering): *SCL/clock =
+  D15 (P1.13)*, *SDA/data = D16 (P0.10)*, UART PS/2 driver @ 14400 baud. No
+  hardware reset pin is wired — the driver uses the PS/2 software reset. Change
+  these in =do52_ps2_mouse.dtsi= if the trackpoint is wired differently.
+
+* Build & flash (local)
+
+Everything goes through =scripts/zmk.py= (stdlib-only; uses [[https://docs.astral.sh/uv/][uv]] to manage
+the Python env + =west=). The toolchain comes from either a Nix devShell
+(=nix develop=, see =flake.nix=) or Homebrew on macOS — =zmk.py= auto-detects
+=arm-none-eabi-gcc=. The west workspace is *this repo*: =west update= clones
+=zmk/=, =zephyr/=, =modules/= into the repo root and the venv lives at =./.venv=
+(all gitignored).
+
+#+begin_src bash
+# One-time (run inside `nix develop` first, or use Homebrew on macOS)
+./scripts/zmk.py setup
+
+# After ANY change to config/west.yml, refresh the checkout once:
+./scripts/zmk.py update
+
+# Build -> ./firmware/do52_<side>.uf2
+./scripts/zmk.py build both       # or: left | right
+
+# Flash a half (double-tap RESET on the nice!nano when prompted)
+./scripts/zmk.py flash both       # or: left | right
+#+end_src
+
+Defaults are =--keyboard do52= / =--board nice_nano_v2= (env =KEYBOARD=/=BOARD=
+also honored). Build the older variant with
+=./scripts/zmk.py build both --keyboard do52pro=.
+
+After flashing, if the halves or host won't connect (central side changed),
+clear BLE bonds on both halves (a =&bt BT_CLR= keybind or a =settings_reset=
+UF2) and re-pair.
+
+* Build & flash (CI)
+
+Pushing triggers =.github/workflows/build.yml=, which builds =do52_left=,
+=do52_right=, =do52pro_left=, =do52pro_right= on =nice_nano_v2= and uploads each
+=.uf2= as a workflow artifact.

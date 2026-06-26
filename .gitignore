@@ -9,3 +9,4 @@ tools/
 
 # west pulls this driver via config/west.yml; do not commit the local clone
 kb_zmk_ps2_mouse_trackpoint_driver/
+.venv/
