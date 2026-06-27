@@ -1,4 +1,6 @@
-if SHIELD_DO52PRO_LEFT
+# The right half is the BLE split central because the PS/2 trackpoint driver
+# only runs on the central, and the trackpoint is wired to the right half.
+if SHIELD_DO52PRO_RIGHT
 
 config ZMK_KEYBOARD_NAME
     default "do52pro"

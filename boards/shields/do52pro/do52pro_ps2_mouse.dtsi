@@ -1,14 +1,14 @@
 /*
- * PS/2 Mouse / Trackpoint support for the do52 (nice!nano v2 / nRF52840)
+ * PS/2 Mouse / Trackpoint support for the do52pro (nice!nano v2 / nRF52840)
  *
- * Driver: https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver
+ * Driver: Https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver
  *
- * This file is included from do52_right.overlay because the RIGHT half is the
+ * This file is included from do52pro_right.overlay because the RIGHT half is the
  * BLE split central (see Kconfig.defconfig). The PS/2 driver only works on the
  * central half, so the trackpoint MUST be wired to the RIGHT controller.
  *
  * If you move the trackpoint to the LEFT half instead, move the #include to
- * do52_left.overlay AND change ZMK_SPLIT_ROLE_CENTRAL to the left side in
+ * do52pro_left.overlay AND change ZMK_SPLIT_ROLE_CENTRAL to the left side in
  * Kconfig.defconfig.
  *
  * Pins (nice!nano "pro_micro" numbering), wired to the right controller:

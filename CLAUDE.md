@@ -15,7 +15,10 @@ ZMK firmware for the **do52 / do52pro** split keyboard.
 
 Split roles: the **RIGHT half is the BLE central** (it connects to the host and
 runs the trackpoint); the **LEFT half is the peripheral**. This is set in
-`boards/shields/do52/Kconfig.defconfig`.
+`boards/shields/do52/Kconfig.defconfig`. The `do52pro` variant now mirrors this
+— RIGHT central with the PS/2 trackpoint on the right half
+(`boards/shields/do52pro/Kconfig.defconfig`,
+`boards/shields/do52pro/do52pro_ps2_mouse.dtsi`).
 
 ## Where the configs live
 
