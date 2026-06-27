@@ -8,10 +8,11 @@ Replaces the old setup.sh / build.sh / flash.sh.
   ./scripts/zmk.py update                # `west update` (run after editing west.yml)
   ./scripts/zmk.py build [side] [opts]   # -> ./firmware/<keyboard>_<side>.uf2
   ./scripts/zmk.py flash [side]          # copy the .uf2 to a nice!nano bootloader
+  ./scripts/zmk.py deploy [side] [opts]  # build then flash in one step
 
 `side` is one of: left | right | both (default: both).
 
-Defaults: --keyboard do52, --board nice_nano_v2 (env KEYBOARD / BOARD also
+Defaults: --keyboard do52pro, --board nice_nano_v2 (env KEYBOARD / BOARD also
 honored). The RIGHT half is the BLE central and carries the PS/2 trackpoint.
 
 Stdlib only, so it runs before the venv/toolchain exist. Uses `uv` to manage
@@ -33,7 +34,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 VENV_DIR = PROJECT_DIR / ".venv"
 FIRMWARE_DIR = PROJECT_DIR / "firmware"
 
-DEFAULT_KEYBOARD = os.environ.get("KEYBOARD", "do52")
+DEFAULT_KEYBOARD = os.environ.get("KEYBOARD", "do52pro")
 DEFAULT_BOARD = os.environ.get("BOARD", "nice_nano_v2")
 # Fallback toolchain root if arm-none-eabi-gcc is not on PATH (bare macOS).
 DEFAULT_TOOLCHAIN = "/Applications/ArmGNUToolchain/15.2.rel1/arm-none-eabi"
@@ -255,6 +256,13 @@ def cmd_flash(args: argparse.Namespace) -> None:
     ok("Done.")
 
 
+def cmd_deploy(args: argparse.Namespace) -> None:
+    """Build then flash in one step (build aborts on failure, so flash only
+    runs if every requested side built cleanly)."""
+    cmd_build(args)
+    cmd_flash(args)
+
+
 # --- arg parsing -----------------------------------------------------------
 
 def build_parser() -> argparse.ArgumentParser:
@@ -285,6 +293,14 @@ def build_parser() -> argparse.ArgumentParser:
     f = sub.add_parser("flash", help="flash a built .uf2 to a nice!nano")
     add_target(f)
     f.set_defaults(func=cmd_flash)
+
+    d = sub.add_parser("deploy", help="build then flash in one step")
+    add_target(d)
+    d.add_argument("--board", default=DEFAULT_BOARD,
+                   help=f"target board (default: {DEFAULT_BOARD})")
+    d.add_argument("--no-pristine", dest="pristine", action="store_false",
+                   help="incremental build (default: pristine)")
+    d.set_defaults(func=cmd_deploy, pristine=True)
 
     return p
 

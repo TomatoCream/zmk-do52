@@ -89,16 +89,19 @@ clone — west manages it, never commit it).
 # the modules switch to the manifest's revisions:
 ./scripts/zmk.py update
 
-# Build -> ./firmware/do52_<side>.uf2
+# Build -> ./firmware/do52pro_<side>.uf2
 ./scripts/zmk.py build both      # or: left | right
 
 # Flash a half (double-tap RESET on that nice!nano when prompted)
 ./scripts/zmk.py flash both      # or: left | right
+
+# Build then flash in one step
+./scripts/zmk.py deploy both     # or: left | right
 ```
 
-Defaults are `--keyboard do52` / `--board nice_nano_v2` (env `KEYBOARD`/`BOARD`
-also honored). To build the older variant:
-`./scripts/zmk.py build both --keyboard do52pro`.
+Defaults are `--keyboard do52pro` / `--board nice_nano_v2` (env `KEYBOARD`/`BOARD`
+also honored). To build the plain do52:
+`./scripts/zmk.py build both --keyboard do52`.
 
 After flashing, if the halves or the host won't connect (the central side
 changed), clear BLE bonds on both halves (a `&bt BT_CLR` keybind or a
