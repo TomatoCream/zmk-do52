@@ -97,6 +97,10 @@ clone — west manages it, never commit it).
 
 # Build then flash in one step
 ./scripts/zmk.py deploy both     # or: left | right
+
+# Wipe BLE bonds when the halves/host won't connect (e.g. central role changed).
+# Builds + flashes ZMK's settings_reset shield; afterwards reload real firmware.
+./scripts/zmk.py reset both      # or: left | right
 ```
 
 Defaults are `--keyboard do52pro` / `--board nice_nano_v2` (env `KEYBOARD`/`BOARD`
@@ -104,8 +108,10 @@ also honored). To build the plain do52:
 `./scripts/zmk.py build both --keyboard do52`.
 
 After flashing, if the halves or the host won't connect (the central side
-changed), clear BLE bonds on both halves (a `&bt BT_CLR` keybind or a
-`settings_reset` UF2) and re-pair.
+changed), clear BLE bonds on **both** halves with `./scripts/zmk.py reset both`
+(it flashes the `settings_reset` UF2), then reload the real firmware with
+`./scripts/zmk.py flash both` (or `deploy both`) and re-pair. Resetting only one
+half leaves a mismatched bond and the halves still won't link.
 
 ## Build & flash (CI)
 

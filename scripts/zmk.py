@@ -9,6 +9,7 @@ Replaces the old setup.sh / build.sh / flash.sh.
   ./scripts/zmk.py build [side] [opts]   # -> ./firmware/<keyboard>_<side>.uf2
   ./scripts/zmk.py flash [side]          # copy the .uf2 to a nice!nano bootloader
   ./scripts/zmk.py deploy [side] [opts]  # build then flash in one step
+  ./scripts/zmk.py reset [side]          # flash settings_reset.uf2 to wipe BLE bonds
 
 `side` is one of: left | right | both (default: both).
 
@@ -33,6 +34,7 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 VENV_DIR = PROJECT_DIR / ".venv"
 FIRMWARE_DIR = PROJECT_DIR / "firmware"
+RESET_UF2 = FIRMWARE_DIR / "settings_reset.uf2"
 
 DEFAULT_KEYBOARD = os.environ.get("KEYBOARD", "do52pro")
 DEFAULT_BOARD = os.environ.get("BOARD", "nice_nano_v2")
@@ -220,12 +222,12 @@ def _wait_for_bootloader(timeout: int = 60) -> str | None:
     return None
 
 
-def _flash_one(keyboard: str, side: str) -> None:
-    fw = FIRMWARE_DIR / f"{keyboard}_{side}.uf2"
+def _flash_uf2(fw: Path, label: str) -> None:
+    """Wait for a nice!nano bootloader drive and copy `fw` onto it."""
     if not fw.exists():
-        die(f"Firmware not found: {fw}\nRun `./scripts/zmk.py build {side}` first.")
+        die(f"Firmware not found: {fw}")
 
-    info(f"Ready to flash {keyboard}_{side}: {fw}")
+    info(f"Ready to flash {label}: {fw}")
     vol = _wait_for_bootloader()
     if not vol:
         die("Timed out waiting for the bootloader (double-tap RESET quickly).")
@@ -242,7 +244,14 @@ def _flash_one(keyboard: str, side: str) -> None:
 
     if os.path.isdir(vol):
         die(f"Volume still mounted at {vol} — flash may have failed.")
-    ok(f"Flashed {keyboard}_{side} (board rebooted).")
+    ok(f"Flashed {label} (board rebooted).")
+
+
+def _flash_one(keyboard: str, side: str) -> None:
+    fw = FIRMWARE_DIR / f"{keyboard}_{side}.uf2"
+    if not fw.exists():
+        die(f"Firmware not found: {fw}\nRun `./scripts/zmk.py build {side}` first.")
+    _flash_uf2(fw, f"{keyboard}_{side}")
 
 
 def cmd_flash(args: argparse.Namespace) -> None:
@@ -261,6 +270,52 @@ def cmd_deploy(args: argparse.Namespace) -> None:
     runs if every requested side built cleanly)."""
     cmd_build(args)
     cmd_flash(args)
+
+
+def _build_reset(board: str) -> None:
+    """Build ZMK's `settings_reset` shield -> firmware/settings_reset.uf2.
+
+    This UF2 wipes all stored BLE bonds. It's the reliable way to recover when
+    the split central role changes and the halves won't re-pair, since the
+    peripheral can't clear its bond from the keymap. Built in its own dir so it
+    never clobbers the normal `build/` tree.
+    """
+    if not VENV_DIR.exists():
+        die("No .venv — run `./scripts/zmk.py setup` first.")
+    env = toolchain_env()
+    FIRMWARE_DIR.mkdir(parents=True, exist_ok=True)
+    info(f"Building settings_reset on {board} ...")
+    run(["uv", "run", "west", "build", "-s", "zmk/app", "-b", board,
+         "--pristine", "-d", "build_reset", "--",
+         "-DSHIELD=settings_reset", f"-DBOARD_ROOT={PROJECT_DIR}"], env=env)
+    uf2 = PROJECT_DIR / "build_reset" / "zephyr" / "zmk.uf2"
+    if not uf2.exists():
+        die("Build produced no zmk.uf2 for settings_reset")
+    shutil.copy2(uf2, RESET_UF2)
+    ok(f"Built: {RESET_UF2}")
+
+
+def cmd_reset(args: argparse.Namespace) -> None:
+    """Wipe BLE bonds: flash settings_reset.uf2 to the chosen half/halves.
+
+    settings_reset replaces the keyboard app, so afterwards the board does
+    nothing until you reload the real firmware with `flash` / `deploy`. Reset
+    BOTH halves when the central role changed — clearing only one leaves a
+    mismatched bond and they still won't link."""
+    if args.rebuild or not RESET_UF2.exists():
+        _build_reset(args.board)
+    else:
+        info(f"Using existing {RESET_UF2} (pass --rebuild to rebuild it)")
+
+    sides = sides_for(args.side)
+    for i, side in enumerate(sides):
+        print(f"\n{_col('green')}=== Resetting {side.upper()} ==={_col('nc')}")
+        _flash_uf2(RESET_UF2, f"settings_reset ({side})")
+        if i + 1 < len(sides):
+            input(f"\n{_col('yellow')}Swap to the {sides[i + 1]} half, then "
+                  f"press Enter...{_col('nc')}")
+    print()
+    warn(f"Bonds wiped. Now reload firmware: ./scripts/zmk.py flash {args.side}")
 
 
 # --- arg parsing -----------------------------------------------------------
@@ -293,6 +348,17 @@ def build_parser() -> argparse.ArgumentParser:
     f = sub.add_parser("flash", help="flash a built .uf2 to a nice!nano")
     add_target(f)
     f.set_defaults(func=cmd_flash)
+
+    r = sub.add_parser("reset",
+                       help="wipe BLE bonds (flash settings_reset.uf2)")
+    r.add_argument("side", nargs="?", default="both",
+                   choices=["left", "right", "both"],
+                   help="which half (default: both)")
+    r.add_argument("--board", default=DEFAULT_BOARD,
+                   help=f"target board (default: {DEFAULT_BOARD})")
+    r.add_argument("--rebuild", action="store_true",
+                   help="rebuild settings_reset.uf2 even if it already exists")
+    r.set_defaults(func=cmd_reset)
 
     d = sub.add_parser("deploy", help="build then flash in one step")
     add_target(d)

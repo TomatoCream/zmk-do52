@@ -1,5 +1,6 @@
 bluetooth/
 build/
+build_reset/
 firmware/
 .west/
 zmk/

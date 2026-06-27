@@ -21,7 +21,7 @@
    &kp LCTRL &kp LGUI              &kp SPACE &mo 2       &mo 3    &lt 4 RET               &kp LALT &kp RGUI
                                     // DPAD Left, Down, Middle, Up, Right
                         &kp C_PREV &kp C_VOL_DN  &kp C_PP &kp C_VOL_UP &kp C_NEXT
-                        &kp LEFT  &kp DOWN  &kp K_MUTE   &kp UP &kp RIGHT
+                        &none     &kp DOWN  &kp K_MUTE   &kp UP &kp RIGHT
                         >;
                 };
                 lower_layer {
@@ -33,7 +33,7 @@
    &kp LCTRL &kp LGUI                     &kp SPACE &trans        &mo 5    &kp SPACE                   &kp LALT &kp RGUI
                                     // DPAD Left, Down, Middle, Up, Right
                         &kp C_PREV &kp C_VOL_DN  &kp C_PP &kp C_VOL_UP &kp C_NEXT
-                        &kp C_PREV &kp C_VOL_DN  &kp C_PP &kp C_VOL_UP &kp C_NEXT
+                        &none      &kp C_VOL_DN  &kp C_PP &kp C_VOL_UP &kp C_NEXT
                         >;
                 };
                 upper_layer {
