@@ -9,8 +9,10 @@
  * longer exists on zmkfirmware/main. The PS/2 driver itself already emits
  * standard Zephyr input events (input_report_rel / input_report_key), so on
  * mainline we drop the bundled listener and use the STOCK `zmk,input-listener`.
- * Axis orientation moves from the old listener's `xy-swap` onto the trackpoint
- * device node's `tp-xy-swap` (hardware-level, acceleration-aware).
+ * Axis orientation: the legacy listener's `xy-swap` becomes the stock
+ * `&zip_xy_transform` input processor on the listener (software swap, works on
+ * any trackpoint). The device-node `tp-xy-swap` is a hardware config bit that
+ * only some trackpoints honor, so it is not used here.
  *
  * The RIGHT half is the BLE split central; the PS/2 driver only runs on the
  * central, so the trackpoint MUST be wired to the RIGHT controller.
@@ -22,6 +24,9 @@
  * No hardware reset pin is wired; the driver resets the trackpoint via the PS/2
  * software reset command at boot.
  */
+
+#include <dt-bindings/zmk/input_transform.h>
+#include <input/processors.dtsi>
 
 #define MOUSE_PS2_DRIVER_UART
 
@@ -143,19 +148,19 @@
 		compatible = "zmk,input-mouse-ps2";
 		ps2-device = <&uart_ps2>;
 
-		// Trackpoint is mounted rotated 90deg -> swap axes at the device.
-		// (Legacy did this on the listener; mainline's stock listener has no
-		// xy-swap, so we use the driver's hardware-level swap instead.)
-		tp-xy-swap;
-		// Uncomment to flip a direction if the cursor moves the wrong way:
-		// tp-x-invert;
-		// tp-y-invert;
+		// Axis orientation is handled in software on the listener below via
+		// &zip_xy_transform (works on any trackpoint, unlike the hardware
+		// tp-xy-swap config bit). To flip a direction, OR the transform flag
+		// with INPUT_TRANSFORM_X_INVERT / INPUT_TRANSFORM_Y_INVERT.
 	};
 
 	// STOCK mainline input listener (NOT the driver's bundled -ps2 variant).
 	// Consumes the input_report_rel/key events the PS/2 driver emits.
+	// Trackpoint is mounted rotated 90deg, so swap X/Y with the stock
+	// transform input processor.
 	mouse_ps2_input_listener: mouse_ps2_input_listener {
 		compatible = "zmk,input-listener";
 		device = <&mouse_ps2>;
+		input-processors = <&zip_xy_transform INPUT_TRANSFORM_XY_SWAP>;
 	};
 };
