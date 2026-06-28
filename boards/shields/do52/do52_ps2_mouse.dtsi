@@ -1,0 +1,106 @@
+/*
+ * PS/2 Mouse / Trackpoint support for the do52 (nice!nano v2 / nRF52840)
+ *
+ * Driver: https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver
+ * Ported to stock ZMK (Zephyr 4.1): the driver's input device emits standard
+ * Zephyr input events, so we consume them with the STOCK `zmk,input-listener`
+ * and the stock input processors instead of the driver's bundled
+ * `zmk,input-listener-ps2` (which depended on the old zmk/mouse HID API).
+ *
+ * Included from do52_right.overlay because the RIGHT half is the BLE split
+ * central (see Kconfig.defconfig). The PS/2 driver only works on the central
+ * half, so the trackpoint MUST be wired to the RIGHT controller.
+ *
+ * Pins (nice!nano "pro_micro" numbering), wired to the right controller:
+ *   SCL (clock) : D15  (P1.13)
+ *   SDA (data)  : D16  (P0.10 -> NRF_PSEL(UART_RX, 0, 10))
+ *
+ * No hardware reset pin is wired; the driver resets the trackpoint via the
+ * PS/2 software reset command at boot.
+ */
+
+#include <dt-bindings/zmk/input_transform.h>
+#include <input/processors.dtsi>
+
+#define MOUSE_PS2_PIN_SCL_PRO_MICRO <&pro_micro 15 GPIO_ACTIVE_HIGH>
+#define MOUSE_PS2_PIN_SDA_PRO_MICRO <&pro_micro 16 GPIO_ACTIVE_HIGH>
+
+// SDA in pinctrl notation. Must match SDA above. D16 == P0.10 -> 0, 10
+#define MOUSE_PS2_PIN_SDA_PINCTRL <NRF_PSEL(UART_RX, 0, 10)>
+
+#define MOUSE_PS2_UART_BAUD_RATE <14400>
+
+// Unexposed nRF52840 UART pins (UART needs two pins; PS/2 only uses one).
+// Do NOT change these on a nice!nano v2 / clone.
+#define MOUSE_PS2_PIN_UNEXPOSED_TX <NRF_PSEL(UART_TX, 0, 27)>
+#define MOUSE_PS2_PIN_UNEXPOSED_RX <NRF_PSEL(UART_RX, 0, 28)>
+
+/*
+ * Interrupt priority override for the nice!nano v2 (nRF52840).
+ *
+ * PS/2 events must be serviced within ~30-50us, so GPIOTE gets the highest
+ * priority. The driver's Kconfig already demotes the BT controller priorities
+ * (BT_CTLR_LLL_PRIO/ULL_*). The full per-peripheral demotion set from the
+ * legacy config can be layered back on once the base build is confirmed.
+ */
+&gpiote { interrupts = < 6 0 >; };
+
+&pinctrl {
+	uart0_ps2_default: uart0_ps2_default {
+		group1 {
+			psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
+					MOUSE_PS2_PIN_SDA_PINCTRL;
+		};
+	};
+
+	uart0_ps2_sleep: uart0_ps2_sleep {
+		group1 {
+			psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
+					MOUSE_PS2_PIN_SDA_PINCTRL;
+			low-power-enable;
+		};
+	};
+
+	uart0_ps2_off: uart0_ps2_off {
+		group1 {
+			psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
+					MOUSE_PS2_PIN_UNEXPOSED_RX;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	compatible = "nordic,nrf-uarte";
+
+	current-speed = MOUSE_PS2_UART_BAUD_RATE;
+	pinctrl-0 = <&uart0_ps2_default>;
+	pinctrl-1 = <&uart0_ps2_off>;
+	pinctrl-names = "default", "sleep";
+
+	uart_ps2: uart_ps2 {
+		status = "okay";
+		compatible = "uart-ps2";
+		scl-gpios = MOUSE_PS2_PIN_SCL_PRO_MICRO;
+		sda-gpios = MOUSE_PS2_PIN_SDA_PRO_MICRO;
+	};
+};
+
+/ {
+	mouse_ps2: mouse_ps2 {
+		status = "okay";
+		compatible = "zmk,input-mouse-ps2";
+		ps2-device = <&uart_ps2>;
+		// No hardware reset pin wired; the driver uses the PS/2 software reset.
+	};
+
+	// Stock ZMK input listener. The trackpoint is mounted rotated 90deg, so
+	// swap the axes with the stock transform processor. To flip a direction,
+	// OR in INPUT_TRANSFORM_X_INVERT / INPUT_TRANSFORM_Y_INVERT.
+	mouse_ps2_input_listener: mouse_ps2_input_listener {
+		status = "okay";
+		compatible = "zmk,input-listener";
+		device = <&mouse_ps2>;
+		input-processors = <&zip_xy_transform INPUT_TRANSFORM_XY_SWAP>;
+	};
+};

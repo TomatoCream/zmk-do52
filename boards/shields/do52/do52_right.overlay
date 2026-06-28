@@ -14,3 +14,7 @@
         , <&pro_micro 1 GPIO_ACTIVE_HIGH>
         ;
 };
+
+// PS/2 trackpoint, wired to the RIGHT (central) controller. See the dtsi for
+// pins and the stock-input-listener port notes.
+#include "do52_ps2_mouse.dtsi"

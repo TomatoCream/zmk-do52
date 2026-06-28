@@ -56,16 +56,28 @@ The committed firmware is tiny (~170K, ~38 files): just `config/`, `boards/`,
   and `config/do52pro.conf`). Keymaps use `&mkp` / `&mmv` / `&msc` with
   `#include <dt-bindings/zmk/pointing.h>`. Enabling it changes the HID report
   descriptor, so **re-pair BLE hosts** after first flashing it.
-- **No physical trackpoint.** The PS/2 trackpoint was dropped when moving to
-  stock ZMK. It depended on
-  [infused-kim/kb_zmk_ps2_mouse_trackpoint_driver](https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver),
-  whose bundled input listener targets the old mouse-PR fork
-  (`infused-kim @ pr-testing/mouse_ps2_module_base`) — that fork's `zmk/mouse/*`
-  HID API no longer exists on `zmkfirmware/main`.
-- To bring it back you'd port the driver to current ZMK's input subsystem
-  (`zmk,input-listener` + input processors) instead of its bundled listener.
-  The old wiring lived in `do52{,pro}_ps2_mouse.dtsi` (deleted; recover from
-  git history): SCL/clock = D15 (P1.13), SDA/data = D16 (P0.10), UART @ 14400.
+- **`main`: no physical trackpoint.** The PS/2 trackpoint was dropped when
+  moving to stock ZMK, because the driver's *bundled* `zmk,input-listener-ps2`
+  listener targeted the old mouse-PR fork's `zmk/mouse/*` HID API, which no
+  longer exists on `zmkfirmware/main`.
+- **`trackpoint-mainline` branch: physical trackpoint working on stock ZMK /
+  Zephyr 4.1.** The fix was small because
+  [infused-kim/kb_zmk_ps2_mouse_trackpoint_driver](https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver)
+  already emits standard Zephyr input events (`input_report_rel`/`_key`); only
+  its bundled HID listener was fork-coupled. The port:
+  - Pulls the driver via `config/west.yml` (infused-kim GitHub) into a
+    gitignored, west-managed checkout at `kb_zmk_ps2_mouse_trackpoint_driver/`.
+  - Wires it in `boards/shields/do52pro/do52pro_ps2_mouse.dtsi` using the
+    **stock** `zmk,input-listener` (NOT the bundled `-ps2` one), so
+    `src/mouse/input_listener_ps2.c` is never compiled. Axis swap moved from the
+    old listener's `xy-swap` onto the device node's `tp-xy-swap`.
+    Pins: SCL/clock = D15 (P1.13), SDA/data = D16 (P0.10), UART @ 14400.
+  - Needs one source change for Zephyr 4.1: `K_THREAD_STACK_MEMBER` →
+    `K_KERNEL_STACK_MEMBER` in `input_mouse_ps2.c`. Saved as
+    `patches/kb_ps2_zephyr-4.1.patch`. **`west update` resets the gitignored
+    driver checkout to upstream and drops this fix** — re-apply the patch
+    (`git -C kb_zmk_ps2_mouse_trackpoint_driver apply ../patches/kb_ps2_zephyr-4.1.patch`)
+    until `west.yml` is pointed at a personal fork that carries it.
 
 ### Switching back to the legacy trackpoint firmware
 
