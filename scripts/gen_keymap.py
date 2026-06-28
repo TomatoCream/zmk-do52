@@ -134,6 +134,7 @@ LAYERS = [
         ],
     ),
     layer(
+        # Mouse layer: right hand = buttons (top), move (mid), scroll (bottom).
         "func_layer",
         main=[
             ["&kp ESC", "&kp F1", "&kp F2", "&kp F3", "&kp F4", "&kp F5",
@@ -141,9 +142,9 @@ LAYERS = [
             ["&kp TAB", "&kp F11", "&kp F12", "&none", "&none", "&none",
              "&mkp MB4", "&mkp MB1", "&mkp MB3", "&mkp MB2", "&mkp MB5", "&none"],
             ["&kp LSHFT", "&none", "&none", "&none", "&none", "&none",
-             "&none", "&none", "&none", "&none", "&none", "&none"],
+             "&mmv MOVE_LEFT", "&mmv MOVE_DOWN", "&mmv MOVE_UP", "&mmv MOVE_RIGHT", "&none", "&none"],
             ["&kp LSHFT", "&none", "&none", "&none", "&none", "&none",
-             "&none", "&none", "&none", "&none", "&none", "&none"],
+             "&msc SCRL_LEFT", "&msc SCRL_DOWN", "&msc SCRL_UP", "&msc SCRL_RIGHT", "&none", "&none"],
         ],
         thumb=["&kp LCTRL", "&kp LGUI", "", "", "&none", "&none",
                "&none", "&none", "", "", "&kp LALT", "&kp RGUI"],
