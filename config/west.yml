@@ -2,27 +2,15 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
-    - name: infused-kim
-      url-base: https://github.com/infused-kim
   projects:
-    # NOTE: The PS/2 trackpoint driver needs ZMK's mouse PR, which is not in
-    # zmkfirmware/main. So we use infused-kim's fork that is known to be
-    # compatible with the driver. To build WITHOUT the trackpoint, switch this
-    # back to the zmkfirmware/main project below.
+    # Stock upstream ZMK. Pointer support (mouse-key emulation, input
+    # listeners/processors) lives in main now via CONFIG_ZMK_POINTING, and ZMK
+    # Studio is available here too. The old infused-kim fork + PS/2 trackpoint
+    # driver were dropped: the driver bundled its own listener against the
+    # fork's old mouse-HID API, which no longer exists on main.
     - name: zmk
-      remote: infused-kim
-      revision: pr-testing/mouse_ps2_module_base
-      import: app/west.yml
-
-    # Stock ZMK (no mouse / trackpoint support). Disabled in favor of the fork.
-    # - name: zmk
-    #   remote: zmkfirmware
-    #   revision: main
-    #   import: app/west.yml
-
-    # PS/2 mouse & trackpoint driver module.
-    - name: kb_zmk_ps2_mouse_trackpoint_driver
-      remote: infused-kim
+      remote: zmkfirmware
       revision: main
+      import: app/west.yml
   self:
     path: config

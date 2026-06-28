@@ -29,7 +29,7 @@ OUT = Path(__file__).resolve().parent.parent / "config" / "do52pro.keymap"
 HEADER = """\
 #include <behaviors.dtsi>
 #include <dt-bindings/zmk/keys.h>
-#include <dt-bindings/zmk/mouse.h>
+#include <dt-bindings/zmk/pointing.h>
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/ext_power.h>
 

@@ -13,8 +13,9 @@ Replaces the old setup.sh / build.sh / flash.sh.
 
 `side` is one of: left | right | both (default: both).
 
-Defaults: --keyboard do52pro, --board nice_nano_v2 (env KEYBOARD / BOARD also
-honored). The RIGHT half is the BLE central and carries the PS/2 trackpoint.
+Defaults: --keyboard do52pro, --board nice_nano//zmk (env KEYBOARD / BOARD also
+honored). The RIGHT half is the BLE central. Built against stock upstream ZMK
+(zmkfirmware/main) — no trackpoint; mouse keys via CONFIG_ZMK_POINTING.
 
 Stdlib only, so it runs before the venv/toolchain exist. Uses `uv` to manage
 the Python env and `west`. The west workspace is this repo; the venv lives at
@@ -37,7 +38,9 @@ FIRMWARE_DIR = PROJECT_DIR / "firmware"
 RESET_UF2 = FIRMWARE_DIR / "settings_reset.uf2"
 
 DEFAULT_KEYBOARD = os.environ.get("KEYBOARD", "do52pro")
-DEFAULT_BOARD = os.environ.get("BOARD", "nice_nano_v2")
+# HWMv2 board id on current ZMK. The old flat "nice_nano_v2" name is gone:
+# it's now the `nice_nano` board (revision 2.0.0 by default) + ZMK variant.
+DEFAULT_BOARD = os.environ.get("BOARD", "nice_nano//zmk")
 # Fallback toolchain root if arm-none-eabi-gcc is not on PATH (bare macOS).
 DEFAULT_TOOLCHAIN = "/Applications/ArmGNUToolchain/15.2.rel1/arm-none-eabi"
 

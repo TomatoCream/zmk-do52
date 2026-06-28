@@ -1,5 +1,6 @@
-# The right half is the BLE split central because the PS/2 trackpoint driver
-# only runs on the central, and the trackpoint is wired to the right half.
+# The RIGHT half is the BLE split central. (Carried over from the trackpoint
+# era; either half could be central now. Changing it forces a BLE re-pair, so
+# leave it unless you have a reason — see `zmk.py reset`.)
 if SHIELD_DO52_RIGHT
 
 config ZMK_KEYBOARD_NAME
