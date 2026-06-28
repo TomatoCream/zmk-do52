@@ -89,7 +89,7 @@ LAYERS = [
              "&kp N", "&kp M", "&kp COMMA", "&kp DOT", "&kp FSLH", "&kp ESC"],
         ],
         thumb=["&kp LCTRL", "&kp LGUI", "", "", "&kp SPACE", "&mo 2",
-               "&mo 3", "&lt 4 RET", "", "", "&kp LALT", "&kp RGUI"],
+               "&mo 3", "&lt 4 RET", "", "", "&kp LALT", "&studio_unlock"],
         dpad=[
             ["&kp C_PREV", "&kp C_VOL_DN", "&kp C_PP", "&kp C_VOL_UP", "&kp C_NEXT"],
             ["&kp LEFT", "&kp DOWN", "&kp K_MUTE", "&kp UP", "&kp RIGHT"],
@@ -153,7 +153,7 @@ LAYERS = [
     layer(
         "config_layer",
         main=[
-            ["&none", "&to 0", "&to 1", "&studio_unlock", "&none", "&none",
+            ["&none", "&to 0", "&to 1", "&none", "&none", "&none",
              "&bt BT_SEL 0", "&bt BT_SEL 1", "&bt BT_SEL 2", "&bt BT_SEL 3", "&none", "&none"],
             ["&none", "&none", "&none", "&none", "&none", "&none",
              "&none", "&bt BT_PRV", "&bt BT_NXT", "&bt BT_DISC", "&none", "&none"],
