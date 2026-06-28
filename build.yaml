@@ -7,14 +7,18 @@
 #
 ---
 include:
+  # Central (right) halves carry the ZMK Studio USB-RPC snippet; left
+  # (peripheral) halves keep USB logging. Studio and usb-logging both claim the
+  # USB CDC ACM, so don't put both on the same build.
   - board: nice_nano//zmk
     shield: "do52_left"
     snippet: zmk-usb-logging
   - board: nice_nano//zmk
     shield: "do52_right"
+    snippet: studio-rpc-usb-uart
   - board: nice_nano//zmk
     shield: "do52pro_left"
     snippet: zmk-usb-logging
   - board: nice_nano//zmk
     shield: "do52pro_right"
-    snippet: zmk-usb-logging
+    snippet: studio-rpc-usb-uart

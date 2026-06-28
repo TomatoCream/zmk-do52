@@ -41,6 +41,12 @@ DEFAULT_KEYBOARD = os.environ.get("KEYBOARD", "do52pro")
 # HWMv2 board id on current ZMK. The old flat "nice_nano_v2" name is gone:
 # it's now the `nice_nano` board (revision 2.0.0 by default) + ZMK variant.
 DEFAULT_BOARD = os.environ.get("BOARD", "nice_nano//zmk")
+
+# ZMK Studio talks over USB to the BLE central (the RIGHT half — see each
+# shield's Kconfig.defconfig). That half is built with the studio USB-RPC
+# snippet so studio.zmk.dev can connect. Pass --no-studio to skip it.
+CENTRAL_SIDE = "right"
+STUDIO_SNIPPET = "studio-rpc-usb-uart"
 # Fallback toolchain root if arm-none-eabi-gcc is not on PATH (bare macOS).
 DEFAULT_TOOLCHAIN = "/Applications/ArmGNUToolchain/15.2.rel1/arm-none-eabi"
 
@@ -192,6 +198,8 @@ def cmd_build(args: argparse.Namespace) -> None:
                "-b", args.board]
         if args.pristine:
             cmd.append("--pristine")
+        if side == CENTRAL_SIDE and getattr(args, "studio", True):
+            cmd += ["-S", STUDIO_SNIPPET]
         cmd += ["--", f"-DSHIELD={shield}",
                 f"-DZMK_CONFIG={PROJECT_DIR / 'config'}",
                 f"-DBOARD_ROOT={PROJECT_DIR}"]
@@ -346,7 +354,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help=f"target board (default: {DEFAULT_BOARD})")
     b.add_argument("--no-pristine", dest="pristine", action="store_false",
                    help="incremental build (default: pristine)")
-    b.set_defaults(func=cmd_build, pristine=True)
+    b.add_argument("--no-studio", dest="studio", action="store_false",
+                   help="omit the ZMK Studio USB snippet on the central build")
+    b.set_defaults(func=cmd_build, pristine=True, studio=True)
 
     f = sub.add_parser("flash", help="flash a built .uf2 to a nice!nano")
     add_target(f)
@@ -369,7 +379,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help=f"target board (default: {DEFAULT_BOARD})")
     d.add_argument("--no-pristine", dest="pristine", action="store_false",
                    help="incremental build (default: pristine)")
-    d.set_defaults(func=cmd_deploy, pristine=True)
+    d.add_argument("--no-studio", dest="studio", action="store_false",
+                   help="omit the ZMK Studio USB snippet on the central build")
+    d.set_defaults(func=cmd_deploy, pristine=True, studio=True)
 
     return p
 

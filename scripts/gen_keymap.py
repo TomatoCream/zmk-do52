@@ -153,7 +153,7 @@ LAYERS = [
     layer(
         "config_layer",
         main=[
-            ["&none", "&to 0", "&to 1", "&none", "&none", "&none",
+            ["&none", "&to 0", "&to 1", "&studio_unlock", "&none", "&none",
              "&bt BT_SEL 0", "&bt BT_SEL 1", "&bt BT_SEL 2", "&bt BT_SEL 3", "&none", "&none"],
             ["&none", "&none", "&none", "&none", "&none", "&none",
              "&none", "&bt BT_PRV", "&bt BT_NXT", "&bt BT_DISC", "&none", "&none"],
