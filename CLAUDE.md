@@ -61,7 +61,14 @@ The committed firmware is tiny (~170K, ~38 files): just `config/`, `boards/`,
   listener targeted the old mouse-PR fork's `zmk/mouse/*` HID API, which no
   longer exists on `zmkfirmware/main`.
 - **`trackpoint-mainline` branch: physical trackpoint working on stock ZMK /
-  Zephyr 4.1.** The fix was small because
+  Zephyr 4.1.** **The trackpoint is wired to the RIGHT half — the BLE split
+  central — because the PS/2 driver only runs on the central.** This applies to
+  both keyboards: `do52_right.overlay` and `do52pro_right.overlay` each
+  `#include` their `*_ps2_mouse.dtsi`; the left halves are plain peripherals
+  with no pointer hardware. After flashing, if only the right half types,
+  that's a BLE bond mismatch, not a keymap bug — clear bonds on **both** halves
+  (`./scripts/zmk.py reset both`), reflash both, and re-pair the host.
+  The fix was small because
   [infused-kim/kb_zmk_ps2_mouse_trackpoint_driver](https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver)
   already emits standard Zephyr input events (`input_report_rel`/`_key`); only
   its bundled HID listener was fork-coupled. The port:
@@ -69,7 +76,8 @@ The committed firmware is tiny (~170K, ~38 files): just `config/`, `boards/`,
     [TomatoCream/kb_zmk_ps2_mouse_trackpoint_driver](https://github.com/TomatoCream/kb_zmk_ps2_mouse_trackpoint_driver),
     branch `zephyr-4.1`, into a gitignored, west-managed checkout at
     `kb_zmk_ps2_mouse_trackpoint_driver/`.
-  - Wires it in `boards/shields/do52pro/do52pro_ps2_mouse.dtsi` using the
+  - Wires it in `boards/shields/{do52,do52pro}/{do52,do52pro}_ps2_mouse.dtsi`
+    (included from each `*_right.overlay`) using the
     **stock** `zmk,input-listener` (NOT the bundled `-ps2` one), so
     `src/mouse/input_listener_ps2.c` is never compiled. Axis swap is done in
     software on the listener via `&zip_xy_transform INPUT_TRANSFORM_XY_SWAP`
