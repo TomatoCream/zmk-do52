@@ -65,19 +65,22 @@ The committed firmware is tiny (~170K, ~38 files): just `config/`, `boards/`,
   [infused-kim/kb_zmk_ps2_mouse_trackpoint_driver](https://github.com/infused-kim/kb_zmk_ps2_mouse_trackpoint_driver)
   already emits standard Zephyr input events (`input_report_rel`/`_key`); only
   its bundled HID listener was fork-coupled. The port:
-  - Pulls the driver via `config/west.yml` (infused-kim GitHub) into a
-    gitignored, west-managed checkout at `kb_zmk_ps2_mouse_trackpoint_driver/`.
+  - Pulls the driver via `config/west.yml` from our fork
+    [TomatoCream/kb_zmk_ps2_mouse_trackpoint_driver](https://github.com/TomatoCream/kb_zmk_ps2_mouse_trackpoint_driver),
+    branch `zephyr-4.1`, into a gitignored, west-managed checkout at
+    `kb_zmk_ps2_mouse_trackpoint_driver/`.
   - Wires it in `boards/shields/do52pro/do52pro_ps2_mouse.dtsi` using the
     **stock** `zmk,input-listener` (NOT the bundled `-ps2` one), so
-    `src/mouse/input_listener_ps2.c` is never compiled. Axis swap moved from the
-    old listener's `xy-swap` onto the device node's `tp-xy-swap`.
+    `src/mouse/input_listener_ps2.c` is never compiled. Axis swap is done in
+    software on the listener via `&zip_xy_transform INPUT_TRANSFORM_XY_SWAP`
+    (works on any trackpoint, unlike the hardware `tp-xy-swap` config bit).
     Pins: SCL/clock = D15 (P1.13), SDA/data = D16 (P0.10), UART @ 14400.
-  - Needs one source change for Zephyr 4.1: `K_THREAD_STACK_MEMBER` →
-    `K_KERNEL_STACK_MEMBER` in `input_mouse_ps2.c`. Saved as
-    `patches/kb_ps2_zephyr-4.1.patch`. **`west update` resets the gitignored
-    driver checkout to upstream and drops this fix** — re-apply the patch
-    (`git -C kb_zmk_ps2_mouse_trackpoint_driver apply ../patches/kb_ps2_zephyr-4.1.patch`)
-    until `west.yml` is pointed at a personal fork that carries it.
+  - The fork's `zephyr-4.1` branch carries the only source change needed for
+    Zephyr 4.1: `K_THREAD_STACK_MEMBER` → `K_KERNEL_STACK_MEMBER` in
+    `input_mouse_ps2.c` (also kept as `patches/kb_ps2_zephyr-4.1.patch` for
+    reference). Because `west.yml` points at the fork, a fresh `west update`
+    pulls the fix automatically — no patching needed. To pull upstream driver
+    updates, rebase the fork's `zephyr-4.1` branch onto infused-kim/main.
 
 ### Switching back to the legacy trackpoint firmware
 

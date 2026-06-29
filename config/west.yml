@@ -2,14 +2,12 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
-    # PS/2 trackpoint driver. Pulled from infused-kim's GitHub (the real driver
-    # repo, with src/). For the Zephyr-4.1 port we edit the checked-out copy at
-    # <workspace>/kb_zmk_ps2_mouse_trackpoint_driver directly; once it builds,
-    # push that to a personal fork and switch this remote to it.
-    # NOTE: the local /Users/df/projects/kb_... clone is NOT this -- it was
-    # overwritten with the TomatoCream/-zmk_config example repo.
-    - name: infused-kim
-      url-base: https://github.com/infused-kim
+    # PS/2 trackpoint driver, our fork. Forked from
+    # infused-kim/kb_zmk_ps2_mouse_trackpoint_driver; the `zephyr-4.1` branch
+    # carries the one-line K_KERNEL_STACK_MEMBER fix needed to build against
+    # stock zmkfirmware/main (Zephyr 4.1). See patches/kb_ps2_zephyr-4.1.patch.
+    - name: tomatocream
+      url-base: https://github.com/TomatoCream
   projects:
     # Stock upstream ZMK (Zephyr 4.1). Pointer support (input listeners/
     # processors, mouse keys) lives in main via CONFIG_ZMK_POINTING.
@@ -18,13 +16,13 @@ manifest:
       revision: main
       import: app/west.yml
 
-    # PS/2 mouse & trackpoint driver (infused-kim), being ported to mainline.
-    # The driver already emits standard Zephyr input events; on mainline we use
-    # the STOCK zmk,input-listener and never instantiate its bundled
+    # PS/2 mouse & trackpoint driver, ported to mainline. The driver already
+    # emits standard Zephyr input events; on mainline we use the STOCK
+    # zmk,input-listener and never instantiate its bundled
     # zmk,input-listener-ps2 (so src/mouse/ is excluded from the build).
     # Checked out at <workspace>/kb_zmk_ps2_mouse_trackpoint_driver (gitignored).
     - name: kb_zmk_ps2_mouse_trackpoint_driver
-      remote: infused-kim
-      revision: main
+      remote: tomatocream
+      revision: zephyr-4.1
   self:
     path: config
