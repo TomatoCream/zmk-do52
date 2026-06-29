@@ -89,7 +89,7 @@ LAYERS = [
              "&kp N", "&kp M", "&kp COMMA", "&kp DOT", "&kp FSLH", "&kp ESC"],
         ],
         thumb=["&kp LCTRL", "&kp LGUI", "", "", "&kp SPACE", "&mo 2",
-               "&mo 3", "&lt 4 RET", "", "", "&kp LALT", "&studio_unlock"],
+               "&mo 1", "&lt 4 RET", "", "", "&kp LALT", "&studio_unlock"],
         dpad=[
             ["&kp C_PREV", "&kp C_VOL_DN", "&kp C_PP", "&kp C_VOL_UP", "&kp C_NEXT"],
             ["&kp LEFT", "&kp DOWN", "&kp K_MUTE", "&kp UP", "&kp RIGHT"],
