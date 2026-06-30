@@ -71,6 +71,18 @@ HEADER = """\
 
 FOOTER = """\
         };
+
+        combos {
+                compatible = "zmk,combos";
+                // Reboot the RIGHT half to USB bootloader: press the two stacked
+                // right-side BSPC keys together (positions 11 + 23). Right half is
+                // the BLE central / the one you plug in to flash.
+                combo_bootloader {
+                        timeout-ms = <50>;
+                        key-positions = <11 23>;
+                        bindings = <&bootloader>;
+                };
+        };
 };
 """
 
@@ -164,9 +176,9 @@ LAYERS = [
                 ["&kp ESC",   "&kp Q",    "&kp W",  "&kp E",  "&kp R",      "&kp T"],
                 ["&kp TAB",   "&kp A",    "&kp S",  "&kp D",  "&kp F",      "&kp G"],
                 ["&kp LSHFT", "&kp Z",    "&kp X",  "&kp C",  "&kp V",      "&kp B"],
-                ["&kp LCTRL", "&kp LGUI", "",       "",       "&kp SPACE",  "&mo 2"],
+                ["&kp LCTRL", "&kp LGUI", "",       "",       "&kp LALT",  "&kp SPACE"],
             ],
-            "dpad": ["&kp C_PREV", "&kp C_VOL_DN", "&kp C_PP", "&kp C_VOL_UP", "&kp C_NEXT"],
+            "dpad": ["&kp LEFT", "&kp DOWN", "&mkp MB2", "&kp UP", "&kp RIGHT"],
         },
         right={
             "main": [
@@ -174,7 +186,7 @@ LAYERS = [
                 ["&kp Y",    "&kp U",      "&kp I",     "&kp O",   "&kp P",    "&kp BSPC"],
                 ["&kp H",    "&kp J",      "&kp K",     "&kp L",   "&kp SEMI", "&kp SQT"],
                 ["&kp N",    "&kp M",      "&kp COMMA", "&kp DOT", "&kp FSLH", "&kp ESC"],
-                ["&mkp MB1", "&lt 4 RET",  "",          "",        "&kp LALT", "&studio_unlock"],
+                ["&mkp MB1", "&mo 2",  "",          "",        "&kp LALT", ""],
             ],
             "dpad": ["&kp LEFT", "&kp DOWN", "&kp K_MUTE", "&kp UP", "&kp RIGHT"],
         },
@@ -186,7 +198,7 @@ LAYERS = [
                 ["&kp GRAVE", "&kp N1",   "&kp N2",    "&kp N3",    "&kp N4",     "&kp N5"],
                 ["&kp TAB",   "&none",    "&kp BSLH",  "&kp UNDER", "&kp MINUS",  "&kp PIPE"],
                 ["&kp LSHFT", "&none",    "&kp CARET", "&kp EQUAL", "&kp PLUS",   "&kp TILDE"],
-                ["&kp LSHFT", "&none",    "&kp CARET", "&kp EQUAL", "&kp PLUS",   "&kp TILDE"],
+                ["&kp LSHFT", "&none",    "&kp CARET", "&kp EQUAL", "&kp PLUS",   "&studio_unlock"],
                 ["&kp LCTRL", "&kp LGUI", "",          "",          "&kp SPACE",  "&trans"],
             ],
             "dpad": ["&kp C_PREV", "&kp C_VOL_DN", "&kp C_PP", "&kp C_VOL_UP", "&kp C_NEXT"],
