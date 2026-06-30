@@ -1,13 +1,81 @@
 # ZMK Complete Key Reference
 
-Sourced directly from the ZMK headers in this workspace:
-- `zmk/app/include/dt-bindings/zmk/keys.h`
-- `zmk/app/include/dt-bindings/zmk/modifiers.h`
-- `zmk/app/include/dt-bindings/zmk/mouse.h`
-- `zmk/app/include/dt-bindings/zmk/bt.h`
-- `zmk/app/include/dt-bindings/zmk/ext_power.h`
+Sourced directly from the ZMK checkout in **this repo** (`zmk/`, fetched by
+`west update` — see CLAUDE.md). Not `~/`. The names below come from:
+- `zmk/app/include/dt-bindings/zmk/keys.h` — key codes (`A`, `N6`, `ESC`, …)
+- `zmk/app/include/dt-bindings/zmk/modifiers.h` — modifier masks + `LC()`/`LS()` etc.
+- `zmk/app/include/dt-bindings/zmk/{pointing,bt,ext_power}.h` — mouse / BT / power params
+- `zmk/app/dts/behaviors/*.dtsi` — the **behaviors** (the `&kp`, `&mo`, … front halves)
 
 Aliases marked *(deprecated)* exist but should not be used in new keymaps.
+
+---
+
+## How a keymap binding works (read this first)
+
+The keymap lives in `config/do52.keymap`. **It is not C** — it's **Devicetree
+Source (DTS)**, a hardware-description format, run through the **C preprocessor**
+first (that's why `#include` and macro names like `N6` work). The pipeline:
+
+```
+do52.keymap (DTS + cpp macros)
+  → C preprocessor expands #include / #define   (N6 → a HID usage number)
+  → devicetree compiler builds a node tree
+  → ZMK's C firmware reads that tree at boot and wires up each key
+```
+
+Every entry in a `bindings = < ... >` list has up to two halves:
+
+```
+&kp        N6
+└ behavior  └ parameter(s)
+  a devicetree   an argument the behavior consumes; how many is fixed by the
+  pointer (&)    behavior's #binding-cells (0, 1, or 2 — see the table below)
+  to a behavior
+```
+
+- **The front half (`&name`)** is a *phandle* — a devicetree reference (the `&`
+  means "pointer to the node named `name`"). Each one is a **behavior**: a small
+  Zephyr driver that runs when the key is pressed/released. Behaviors are defined
+  in `zmk/app/dts/behaviors/*.dtsi` (the devicetree node, incl. its label and
+  how many params it takes) and implemented in `zmk/app/src/behaviors/*.c` (the
+  press/release callbacks). They become available in any keymap via the
+  `#include <behaviors.dtsi>` at the top of the file.
+- **The back half** is the parameter(s). For `&kp` it's a key code — each name in
+  `keys.h` is just a `#define` that expands to a USB HID usage number:
+
+  ```c
+  #define A    (ZMK_HID_USAGE(HID_USAGE_KEY, HID_USAGE_KEY_KEYBOARD_A))
+  #define ESC  (ESCAPE)
+  ```
+
+  So `&kp A` compiles to "send the HID code for A." `&trans` / `&none` /
+  `&studio_unlock` take **zero** params, so they have no back half; `&lt 4 RET`
+  takes **two**.
+
+**Why a key can do anything:** the behavior runs real C in the firmware. `&kp`
+sends a code; `&mo` switches layers; `&bt` drives Bluetooth; `&studio_unlock`
+calls into ZMK Studio. `&kp` is not special — it's one behavior among ~25.
+
+Worked example — `&studio_unlock` (the simplest "real" behavior):
+
+```c
+// zmk/app/src/behaviors/behavior_studio_unlock.c
+static int on_keymap_binding_pressed(struct zmk_behavior_binding *binding,
+                                     struct zmk_behavior_binding_event event) {
+    zmk_studio_core_unlock();          // ← this is all the key does
+    return ZMK_BEHAVIOR_OPAQUE;
+}
+```
+
+When you press that physical key, ZMK looks up the behavior bound to that
+position on the active layer and calls its `binding_pressed` callback. To read
+any behavior, open its `behavior_*.c` and look at `binding_pressed` /
+`binding_released` — that's the whole story. To see what params it takes, open
+its `*.dtsi` and read `#binding-cells` (0/1/2).
+
+The full list of behaviors below is the file list of `zmk/app/dts/behaviors/`;
+the full list of `&kp` parameters is every `#define` in `keys.h`.
 
 ---
 
@@ -602,28 +670,87 @@ Used with the `&mkp`, `&mmv`, and `&msc` behaviors.
 
 ---
 
-## Layer & Behavior Controls
+## Behaviors (the `&` front halves)
 
-These are behaviors (not key codes) — they go in the binding position directly.
+These are behaviors, not key codes — they go in the binding position directly.
+This is the **complete set of stock built-ins**, verified against the node
+labels and `#binding-cells` in `zmk/app/dts/behaviors/*.dtsi`. The "Params"
+column is `#binding-cells` (how many back-half arguments it takes). C
+implementation is `zmk/app/src/behaviors/behavior_<name>.c`.
 
-| Behavior        | Syntax            | Description                           |
-|-----------------|-------------------|---------------------------------------|
-| Key press       | `&kp KEY`         | Send a key                            |
-| Momentary layer | `&mo N`           | Layer N while held                    |
-| Layer tap       | `&lt N KEY`       | Layer N when held, KEY when tapped    |
-| Toggle layer    | `&tog N`          | Toggle layer N on/off                 |
-| Go to layer     | `&to N`           | Switch to layer N permanently         |
-| Transparent     | `&trans`          | Pass through to next active layer     |
-| Blocked         | `&none`           | No action                             |
-| Sticky key      | `&sk KEY`         | Key applies to next keypress only     |
-| Sticky layer    | `&sl N`           | Layer N applies to next keypress only |
-| Hold-tap        | `&ht MOD KEY`     | Custom hold-tap (configured in `&ht`) |
-| Tap-dance       | `&td0` …          | Defined in `tap_dances` node          |
-| Macro           | `&m0` …           | Defined in `macros` node              |
-| Reset           | `&sys_reset`      | Reset the controller                  |
-| Bootloader      | `&bootloader`     | Enter USB bootloader (for flashing)   |
-| Bluetooth       | `&bt BT_*`        | See Bluetooth section                 |
-| External power  | `&ext_power EP_*` | See External Power section            |
-| Mouse button    | `&mkp MB1`…`MB5`  | See Mouse section                     |
-| Mouse move      | `&mmv MOVE_*`     | See Mouse section                     |
-| Mouse scroll    | `&msc SCRL_*`     | See Mouse section                     |
+### Keys & repeat
+
+| Behavior    | Syntax        | Params | Description                                  |
+|-------------|---------------|:------:|----------------------------------------------|
+| Key press   | `&kp KEY`     | 1      | Send a key code while held                   |
+| Key toggle  | `&kt KEY`     | 1      | Press flips the key on/off (held until next) |
+| Key repeat  | `&key_repeat` | 0      | Re-send the last key pressed                 |
+| Caps word   | `&caps_word`  | 0      | Caps until a non-word char (auto-cancels)    |
+| Grave/Esc   | `&gresc`      | 0      | `ESC`, or `` ` `` when GUI/Shift is held (mod-morph) |
+
+### Layers
+
+| Behavior        | Syntax      | Params | Description                              |
+|-----------------|-------------|:------:|------------------------------------------|
+| Momentary layer | `&mo N`     | 1      | Activate layer N while held              |
+| Layer-tap       | `&lt N KEY` | 2      | Hold → layer N, tap → KEY (a hold-tap)   |
+| To layer        | `&to N`     | 1      | Switch to layer N (and disable others)   |
+| Toggle layer    | `&tog N`    | 1      | Toggle layer N on/off (label is `tog`)   |
+| Sticky layer    | `&sl N`     | 1      | Layer N for the next keypress only       |
+
+### Mods & hold-tap
+
+| Behavior   | Syntax         | Params | Description                                |
+|------------|----------------|:------:|--------------------------------------------|
+| Mod-tap    | `&mt MOD KEY`  | 2      | Hold → MOD, tap → KEY (a hold-tap)         |
+| Sticky key | `&sk KEY`      | 1      | KEY (usually a mod) for the next press only |
+
+> There is **no stock `&ht`.** The built-in hold-taps are `&mt` (mod-tap) and
+> `&lt` (layer-tap), both `compatible = "zmk,behavior-hold-tap"`. A bare `&ht` is
+> a *user-defined* hold-tap you declare yourself in a `behaviors { }` node — it
+> does not exist until you create it.
+
+### Pass-through & nothing
+
+| Behavior    | Syntax   | Params | Description                                |
+|-------------|----------|:------:|--------------------------------------------|
+| Transparent | `&trans` | 0      | Fall through to the next active layer below |
+| None        | `&none`  | 0      | Explicitly do nothing (blocks fall-through) |
+
+### Pointer / mouse (needs `CONFIG_ZMK_POINTING`)
+
+| Behavior     | Syntax           | Params | Description           |
+|--------------|------------------|:------:|-----------------------|
+| Mouse button | `&mkp MB1`…`MB5` | 1      | See Mouse section     |
+| Mouse move   | `&mmv MOVE_*`    | 1      | See Mouse section     |
+| Mouse scroll | `&msc SCRL_*`    | 1      | See Mouse section     |
+
+### System / radio / power
+
+| Behavior        | Syntax            | Params | Description                            |
+|-----------------|-------------------|:------:|----------------------------------------|
+| Bluetooth       | `&bt BT_*`        | 2*     | See Bluetooth section                  |
+| Output select   | `&out OUT_*`      | 1      | Choose USB vs BLE output               |
+| External power  | `&ext_power EP_*` | 1      | See External Power section             |
+| Backlight       | `&bl BL_*`        | 2      | LED backlight control                  |
+| RGB underglow   | `&rgb_ug RGB_*`   | 2      | RGB underglow control                  |
+| Soft off        | `&soft_off`       | 0      | Power the board down (deep sleep)      |
+| Reset           | `&sys_reset`      | 0      | Reboot the controller                  |
+| Bootloader      | `&bootloader`     | 0      | Reboot into the USB bootloader (flash) |
+| Studio unlock   | `&studio_unlock`  | 0      | Unlock live editing (ZMK Studio)       |
+
+> \* `&bt` is declared with `#binding-cells = <2>`, but the second cell is only
+> used by `BT_SEL <n>` (the profile number). The others (`BT_NXT`, `BT_CLR`, …)
+> are written with one argument — see the Bluetooth section for exact syntax.
+
+### User-defined (not built-in)
+
+These have no fixed name — you declare them in your own `behaviors { }`,
+`macros { }`, etc. and pick the label:
+
+| Kind      | Typical syntax | Defined in                                  |
+|-----------|----------------|---------------------------------------------|
+| Hold-tap  | `&my_ht M K`   | a `zmk,behavior-hold-tap` node you add       |
+| Mod-morph | `&my_mm`       | a `zmk,behavior-mod-morph` node you add       |
+| Tap-dance | `&td0` …       | a `zmk,behavior-tap-dance` node you add        |
+| Macro     | `&m0` …        | a `zmk,behavior-macro` node in `macros { }`    |
