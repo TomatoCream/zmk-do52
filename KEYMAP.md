@@ -77,6 +77,51 @@ its `*.dtsi` and read `#binding-cells` (0/1/2).
 The full list of behaviors below is the file list of `zmk/app/dts/behaviors/`;
 the full list of `&kp` parameters is every `#define` in `keys.h`.
 
+### Behavior phandles (`&` handles)
+
+Every stock handle, its `#binding-cells` (param count), where its node is
+defined, and what it does. `&kp` parameters live in the key-code tables below;
+the grouped behavior reference is at the bottom of this file.
+
+| Phandle          | Params | Defined in (`…/dts/behaviors/`) | What it does                                   |
+|------------------|:------:|---------------------------------|------------------------------------------------|
+| `&kp`            |   1    | `key_press.dtsi`                | Send a key code while held                     |
+| `&kt`            |   1    | `key_toggle.dtsi`               | Toggle a key on/off                            |
+| `&key_repeat`    |   0    | `key_repeat.dtsi`               | Re-send the last key pressed                   |
+| `&caps_word`     |   0    | `caps_word.dtsi`                | Caps until a non-word char (auto-cancels)      |
+| `&gresc`         |   0    | `gresc.dtsi`                    | `ESC`, or `` ` `` under GUI/Shift (mod-morph)  |
+| `&mo`            |   1    | `momentary_layer.dtsi`          | Activate layer N while held                    |
+| `&lt`            |   2    | `layer_tap.dtsi`                | Hold → layer N, tap → KEY (hold-tap)           |
+| `&to`            |   1    | `to_layer.dtsi`                 | Switch to layer N                              |
+| `&tog`           |   1    | `toggle_layer.dtsi`             | Toggle layer N on/off                          |
+| `&sl`            |   1    | `sticky_key.dtsi`               | Sticky layer (next keypress only)              |
+| `&mt`            |   2    | `mod_tap.dtsi`                  | Hold → MOD, tap → KEY (hold-tap)               |
+| `&sk`            |   1    | `sticky_key.dtsi`               | Sticky key/mod (next keypress only)            |
+| `&trans`         |   0    | `transparent.dtsi`              | Fall through to the layer below                |
+| `&none`          |   0    | `none.dtsi`                     | Do nothing / block fall-through                |
+| `&mkp`           |   1    | `mouse_key_press.dtsi`          | Mouse button (`MB1`…`MB5`)                     |
+| `&mmv`           |   1    | `mouse_move.dtsi`               | Mouse move (`MOVE_*`)                          |
+| `&msc`           |   1    | `mouse_scroll.dtsi`             | Mouse scroll (`SCRL_*`)                        |
+| `&bt`            |   2    | `bluetooth.dtsi`                | Bluetooth control (`BT_SEL n`, `BT_CLR`, …)    |
+| `&out`           |   1    | `outputs.dtsi`                  | USB vs BLE output select (`OUT_*`)             |
+| `&ext_power`     |   1    | `ext_power.dtsi`                | External power rail (`EP_*`)                   |
+| `&bl`            |   2    | `backlight.dtsi`                | LED backlight (`BL_*`)                         |
+| `&rgb_ug`        |   2    | `rgb_underglow.dtsi`            | RGB underglow (`RGB_*`)                        |
+| `&soft_off`      |   0    | `soft_off.dtsi`                 | Deep-sleep power down                          |
+| `&sys_reset`     |   0    | `reset.dtsi`                    | Reboot the controller                          |
+| `&bootloader`    |   0    | `reset.dtsi`                    | Reboot into the USB bootloader                 |
+| `&studio_unlock` |   0    | `studio_unlock.dtsi`            | Unlock live editing (ZMK Studio)               |
+
+Two families don't go in a key `bindings` list:
+
+- **Encoder/sensor** — `&inc_dec_kp <CW> <CCW>` (`sensor_rotate_key_press.dtsi`,
+  `#sensor-binding-cells = 2`) goes in a `sensor-bindings = <…>` list. Deprecated
+  alias: `&inc_dec_cp`.
+- **Macro-internal** (`macros.dtsi`) — only valid *inside* a `zmk,behavior-macro`
+  node: `&macro_tap` / `&macro_press` / `&macro_release` (0),
+  `&macro_tap_time <ms>` / `&macro_wait_time <ms>` (1),
+  `&macro_pause_for_release` (0), and `&macro_param_{1to1,1to2,2to1,2to2}` (0).
+
 ---
 
 ## Alphabet
@@ -678,15 +723,18 @@ labels and `#binding-cells` in `zmk/app/dts/behaviors/*.dtsi`. The "Params"
 column is `#binding-cells` (how many back-half arguments it takes). C
 implementation is `zmk/app/src/behaviors/behavior_<name>.c`.
 
+For the flat phandle list with param counts, see
+[Behavior phandles](#behavior-phandles--handles) near the top.
+
 ### Keys & repeat
 
-| Behavior    | Syntax        | Params | Description                                  |
-|-------------|---------------|:------:|----------------------------------------------|
-| Key press   | `&kp KEY`     | 1      | Send a key code while held                   |
-| Key toggle  | `&kt KEY`     | 1      | Press flips the key on/off (held until next) |
-| Key repeat  | `&key_repeat` | 0      | Re-send the last key pressed                 |
-| Caps word   | `&caps_word`  | 0      | Caps until a non-word char (auto-cancels)    |
-| Grave/Esc   | `&gresc`      | 0      | `ESC`, or `` ` `` when GUI/Shift is held (mod-morph) |
+| Behavior   | Syntax        | Params | Description                                          |
+|------------|---------------|:------:|------------------------------------------------------|
+| Key press  | `&kp KEY`     |   1    | Send a key code while held                           |
+| Key toggle | `&kt KEY`     |   1    | Press flips the key on/off (held until next)         |
+| Key repeat | `&key_repeat` |   0    | Re-send the last key pressed                         |
+| Caps word  | `&caps_word`  |   0    | Caps until a non-word char (auto-cancels)            |
+| Grave/Esc  | `&gresc`      |   0    | `ESC`, or `` ` `` when GUI/Shift is held (mod-morph) |
 
 ### Layers
 
@@ -750,7 +798,7 @@ These have no fixed name — you declare them in your own `behaviors { }`,
 
 | Kind      | Typical syntax | Defined in                                  |
 |-----------|----------------|---------------------------------------------|
-| Hold-tap  | `&my_ht M K`   | a `zmk,behavior-hold-tap` node you add       |
-| Mod-morph | `&my_mm`       | a `zmk,behavior-mod-morph` node you add       |
-| Tap-dance | `&td0` …       | a `zmk,behavior-tap-dance` node you add        |
-| Macro     | `&m0` …        | a `zmk,behavior-macro` node in `macros { }`    |
+| Hold-tap  | `&my_ht M K`   | a `zmk,behavior-hold-tap` node you add      |
+| Mod-morph | `&my_mm`       | a `zmk,behavior-mod-morph` node you add     |
+| Tap-dance | `&td0` …       | a `zmk,behavior-tap-dance` node you add     |
+| Macro     | `&m0` …        | a `zmk,behavior-macro` node in `macros { }` |

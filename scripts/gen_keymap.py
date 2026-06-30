@@ -110,6 +110,36 @@ def layer(name, left, right):
     ]
 
 
+# --- behavior handle cheatsheet ----------------------------------------------
+# Every stock ZMK behavior you can drop into a cell below, with its param count
+# (#binding-cells). Full reference + key codes: ../KEYMAP.md.
+#
+#   keys     &kp KEY        send key while held          (1)
+#            &kt KEY        toggle key on/off            (1)
+#            &key_repeat    re-send last key             (0)
+#            &caps_word     caps until non-word char     (0)
+#            &gresc         grave / escape (mod-morph)   (0)
+#   layers   &mo N          momentary layer N            (1)
+#            &lt N KEY      hold=layer N, tap=KEY        (2)
+#            &to N          switch to layer N            (1)
+#            &tog N         toggle layer N               (1)
+#            &sl N          sticky layer (next key)      (1)
+#   mods     &mt MOD KEY    hold=MOD, tap=KEY            (2)
+#            &sk KEY        sticky key (next key)        (1)
+#   passthru &trans         fall through to layer below  (0)
+#            &none          do nothing / block           (0)
+#   pointer  &mkp MB1..MB5  mouse button                 (1)
+#            &mmv MOVE_*    mouse move                   (1)
+#            &msc SCRL_*    mouse scroll                 (1)
+#   system   &bt BT_*       bluetooth (BT_SEL n etc.)    (2)
+#            &out OUT_*     USB/BLE output select        (1)
+#            &ext_power EP_* external power rail         (1)
+#            &bl BL_*       backlight                    (2)
+#            &rgb_ug RGB_*  rgb underglow                (2)
+#            &soft_off      deep-sleep power down        (0)
+#            &sys_reset     reboot controller            (0)
+#            &bootloader    reboot to USB bootloader     (0)
+#            &studio_unlock unlock ZMK Studio editing    (0)
 # --- layer data (edit me) ----------------------------------------------------
 # Each hand: main is 5 rows x 6 cells (number, top, home, bottom, thumb);
 # dpad is the hand's 5-way cluster (Left, Down, Middle, Up, Right).
