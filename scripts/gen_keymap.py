@@ -79,20 +79,18 @@ LAYERS = [
     layer(
         "qwerty",
         main=[
-            ["&kp GRAVE", "&kp N1", "&kp N2", "&kp N3", "&kp N4", "&kp N5",
-             "&kp N6", "&kp N7", "&kp N8", "&kp N9", "&kp N0", "&kp BSPC"],
-            ["&kp ESC", "&kp Q", "&kp W", "&kp E", "&kp R", "&kp T",
-             "&kp Y", "&kp U", "&kp I", "&kp O", "&kp P", "&kp BSPC"],
-            ["&kp TAB", "&kp A", "&kp S", "&kp D", "&kp F", "&kp G",
-             "&kp H", "&kp J", "&kp K", "&kp L", "&kp SEMI", "&kp SQT"],
-            ["&kp LSHFT", "&kp Z", "&kp X", "&kp C", "&kp V", "&kp B",
-             "&kp N", "&kp M", "&kp COMMA", "&kp DOT", "&kp FSLH", "&kp ESC"],
+            ["&kp GRAVE", "&kp N1", "&kp N2", "&kp N3", "&kp N4", "&kp N5",        "&kp N6", "&kp N7", "&kp N8", "&kp N9", "&kp N0", "&kp BSPC"],
+            ["&kp ESC",   "&kp Q",  "&kp W",  "&kp E",  "&kp R",  "&kp T",         "&kp Y",  "&kp U",  "&kp I",  "&kp O",  "&kp P",  "&kp BSPC"],
+            ["&kp TAB",   "&kp A",  "&kp S",  "&kp D",  "&kp F",  "&kp G",         "&kp H",  "&kp J",  "&kp K",  "&kp L",  "&kp SEMI", "&kp SQT"],
+            ["&kp LSHFT", "&kp Z",  "&kp X",  "&kp C",  "&kp V",  "&kp B",         "&kp N",  "&kp M",  "&kp COMMA", "&kp DOT", "&kp FSLH", "&kp ESC"],
         ],
-        thumb=["&kp LCTRL", "&kp LGUI", "", "", "&kp SPACE", "&mo 2",
-               "&mo 1", "&lt 4 RET", "", "", "&kp LALT", "&studio_unlock"],
+        thumb=[
+            "&kp LCTRL", "&kp LGUI", "", "", "&kp SPACE", "&mo 2",
+            "&mkp MB1", "&lt 4 RET", "", "", "&kp LALT", "&studio_unlock",
+        ],
         dpad=[
             ["&kp C_PREV", "&kp C_VOL_DN", "&kp C_PP", "&kp C_VOL_UP", "&kp C_NEXT"],
-            ["&kp LEFT", "&kp DOWN", "&kp K_MUTE", "&kp UP", "&kp RIGHT"],
+            ["&kp LEFT",   "&kp DOWN",     "&kp K_MUTE", "&kp UP",       "&kp RIGHT"],
         ],
     ),
     layer(
