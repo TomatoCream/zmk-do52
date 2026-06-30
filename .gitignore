@@ -1,5 +1,7 @@
 bluetooth/
 build/
+build_left/
+build_right/
 build_reset/
 firmware/
 .west/

@@ -193,9 +193,13 @@ def cmd_build(args: argparse.Namespace) -> None:
 
     for side in sides_for(args.side):
         shield = f"{args.keyboard}_{side}"
+        # Each side gets its own build dir so an incremental (--no-pristine)
+        # rebuild of `both` doesn't reconfigure: a shared dir would thrash
+        # because the SHIELD changes between left and right.
+        build_dir = f"build_{side}"
         info(f"Building {shield} on {args.board} ...")
         cmd = ["uv", "run", "west", "build", "-s", "zmk/app",
-               "-b", args.board]
+               "-b", args.board, "-d", build_dir]
         if args.pristine:
             cmd.append("--pristine")
         if side == CENTRAL_SIDE and getattr(args, "studio", True):
@@ -205,7 +209,7 @@ def cmd_build(args: argparse.Namespace) -> None:
                 f"-DBOARD_ROOT={PROJECT_DIR}"]
         run(cmd, env=env)
 
-        uf2 = PROJECT_DIR / "build" / "zephyr" / "zmk.uf2"
+        uf2 = PROJECT_DIR / build_dir / "zephyr" / "zmk.uf2"
         if not uf2.exists():
             die(f"Build produced no zmk.uf2 for {side}")
         dest = FIRMWARE_DIR / f"{shield}.uf2"

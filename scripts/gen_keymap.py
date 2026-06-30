@@ -29,13 +29,24 @@ The builder concatenates left["main"][i] + right["main"][i] into a 12-key row
 matching the matrix-transform order in boards/shields/do52pro/do52pro.dtsi.
 
 Usage (uv auto-installs tabulate from the inline metadata above):
-    uv run scripts/gen_keymap.py            # write config/do52pro.keymap
-    uv run scripts/gen_keymap.py --stdout   # print instead of writing
+    uv run scripts/gen_keymap.py                 # write config/do52pro.keymap
+    uv run scripts/gen_keymap.py --stdout        # print instead of writing
+
+Generate then hand off to zmk.py (so one command edits + builds + flashes):
+    uv run scripts/gen_keymap.py --build [SIDE]  # write, then `zmk.py build SIDE`
+    uv run scripts/gen_keymap.py --deploy [SIDE] # write, then `zmk.py deploy SIDE`
+    # SIDE is left|right|both (default both). Add --incremental for a fast
+    # (non-pristine) rebuild — much quicker when only the keymap changed.
+    uv run scripts/gen_keymap.py --deploy both --incremental
 """
+import argparse
+import subprocess
 import sys
 from pathlib import Path
 
 from tabulate import tabulate
+
+ZMK_PY = Path(__file__).resolve().parent / "zmk.py"
 
 OUT = Path(__file__).resolve().parent.parent / "config" / "do52pro.keymap"
 
@@ -273,10 +284,42 @@ def build():
     return "\n".join(lines) + "\n"
 
 
-if __name__ == "__main__":
+def parse_args():
+    p = argparse.ArgumentParser(description="Generate config/do52pro.keymap.")
+    p.add_argument("--stdout", action="store_true",
+                   help="print the keymap instead of writing the file")
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--build", nargs="?", const="both", metavar="SIDE",
+                   choices=["left", "right", "both"],
+                   help="after writing, run `zmk.py build SIDE` (default both)")
+    g.add_argument("--deploy", nargs="?", const="both", metavar="SIDE",
+                   choices=["left", "right", "both"],
+                   help="after writing, run `zmk.py deploy SIDE` (default both)")
+    p.add_argument("--incremental", action="store_true",
+                   help="pass --no-pristine to zmk.py for a fast rebuild")
+    return p.parse_args()
+
+
+def main():
+    args = parse_args()
     text = build()
-    if "--stdout" in sys.argv:
+
+    if args.stdout:
         sys.stdout.write(text)
-    else:
-        OUT.write_text(text)
-        print(f"wrote {OUT}")
+        return  # --stdout is a dry run; never build off unsaved output
+
+    OUT.write_text(text)
+    print(f"wrote {OUT}")
+
+    action = "deploy" if args.deploy else "build" if args.build else None
+    if action:
+        side = args.deploy or args.build
+        cmd = [sys.executable, str(ZMK_PY), action, side]
+        if args.incremental:
+            cmd.append("--no-pristine")
+        print(f"$ {' '.join(cmd)}")
+        raise SystemExit(subprocess.run(cmd).returncode)
+
+
+if __name__ == "__main__":
+    main()

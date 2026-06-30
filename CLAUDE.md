@@ -197,10 +197,25 @@ All are gitignored.
 # Build then flash in one step
 ./scripts/zmk.py deploy both     # or: left | right
 
+# Fast iteration: incremental (non-pristine) rebuild. Default builds are
+# --pristine (full clean reconfigure, minutes); --no-pristine reuses the cached
+# build and only recompiles what changed (seconds) — ideal for keymap edits.
+./scripts/zmk.py deploy both --no-pristine
+
 # Wipe BLE bonds when the halves/host won't connect (e.g. central role changed).
 # Builds + flashes ZMK's settings_reset shield; afterwards reload real firmware.
 ./scripts/zmk.py reset both      # or: left | right
 ```
+
+Each side builds in its own dir (`build_left/`, `build_right/`; both gitignored)
+so `--no-pristine both` stays truly incremental — a shared dir would reconfigure
+on every side because the `SHIELD` changes.
+
+`scripts/gen_keymap.py` (regenerates `config/do52pro.keymap`) can hand off to
+`zmk.py` in one shot: `gen_keymap.py --deploy [side]` (or `--build`) writes the
+keymap then runs the matching `zmk.py` command; add `--incremental` for the fast
+rebuild. So the tightest keymap loop is:
+`uv run scripts/gen_keymap.py --deploy both --incremental`.
 
 Defaults are `--keyboard do52pro` / `--board nice_nano//zmk` (env
 `KEYBOARD`/`BOARD` also honored). To build the plain do52:
